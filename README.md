@@ -1,4 +1,4 @@
-# CS585 Project 2 Starter (Docker + Hadoop MapReduce)
+# DS503 Project 2 Starter (Docker + Hadoop MapReduce)
 
 This workspace is set up to help you implement all three required problems:
 
@@ -38,7 +38,7 @@ mvn clean package
 3. Generate datasets locally:
 
 ```bash
-java -cp target/cs585-project2-1.0.0.jar edu.cs585.project2.DataGenerator \
+java -cp target/ds503-project2-1.0.0.jar edu.ds503.project2.DataGenerator \
   --points-out data/P.txt --rects-out data/R.txt --target-mb 100
 ```
 
@@ -55,13 +55,13 @@ docker exec -it namenode hdfs dfs -put -f /tmp/R.txt /project2/input/R.txt
 5. Run jobs (examples):
 
 ```bash
-hadoop jar target/cs585-project2-1.0.0.jar edu.cs585.project2.SpatialJoinJob \
+hadoop jar target/ds503-project2-1.0.0.jar edu.ds503.project2.SpatialJoinJob \
   /project2/input/P.txt /project2/input/R.txt /project2/output/q1
 
-hadoop jar target/cs585-project2-1.0.0.jar edu.cs585.project2.OutlierJob \
+hadoop jar target/ds503-project2-1.0.0.jar edu.ds503.project2.OutlierJob \
   /project2/input/P.txt /project2/output/q2 20 5
 
-hadoop jar target/cs585-project2-1.0.0.jar edu.cs585.project2.KMeansDriver \
+hadoop jar target/ds503-project2-1.0.0.jar edu.ds503.project2.KMeansDriver \
   /project2/input/P.txt /project2/input/seeds.txt /project2/output/q3 10
 ```
 

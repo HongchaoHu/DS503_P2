@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>edu.cs585</groupId>
-    <artifactId>cs585-project2</artifactId>
+    <groupId>edu.ds503</groupId>
+    <artifactId>ds503-project2</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 

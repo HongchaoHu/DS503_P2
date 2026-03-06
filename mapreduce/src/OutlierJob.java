@@ -1,4 +1,4 @@
-package edu.cs585.project2;
+package edu.ds503.project2;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;

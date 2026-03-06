@@ -1,4 +1,4 @@
-package edu.cs585.project2.model;
+package edu.ds503.project2.model;
 
 public class Rectangle2D {
     private final String id;

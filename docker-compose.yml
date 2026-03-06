@@ -6,7 +6,7 @@ services:
       - "9870:9870"
       - "9000:9000"
     environment:
-      - CLUSTER_NAME=cs585
+      - CLUSTER_NAME=ds503
     env_file:
       - ./hadoop.env
     volumes:

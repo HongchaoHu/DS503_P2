@@ -1,4 +1,4 @@
-package edu.cs585.project2;
+package edu.ds503.project2;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * DataGenerator for CS585 Project 2 - Step 1
+ * DataGenerator for DS503 Project 2 - Step 1
  * Creates datasets P (points) and R (rectangles) according to specifications:
  * - Space: [1, 10000] x [1, 10000]
  * - P: random 2D points (x,y)
@@ -52,7 +52,10 @@ public class DataGenerator {
      * Format: "x,y" where x,y are in [1, 10000]
      */
     private static void writePoints(Path path, long targetBytes) throws IOException {
-        Files.createDirectories(path.getParent());
+        Path parent = path.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
         try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
             long written = 0;
             int count = 0;
@@ -76,15 +79,19 @@ public class DataGenerator {
      * - w: width, uniform in [1, 7]
      */
     private static void writeRectangles(Path path, long targetBytes) throws IOException {
-        Files.createDirectories(path.getParent());
+        Path parent = path.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
         try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
             long written = 0;
             int count = 0;
             while (written < targetBytes) {
-                int x = rand(MIN_COORD, MAX_COORD);
-                int y = rand(MIN_COORD, MAX_COORD);
                 int h = rand(MIN_HEIGHT, MAX_HEIGHT);
                 int w = rand(MIN_WIDTH, MAX_WIDTH);
+                // Keep rectangles fully inside [1, 10000] x [1, 10000].
+                int x = rand(MIN_COORD, MAX_COORD - w);
+                int y = rand(MIN_COORD, MAX_COORD - h);
                 String row = x + "," + y + "," + h + "," + w + "\n";
                 writer.write(row);
                 written += row.getBytes(StandardCharsets.UTF_8).length;

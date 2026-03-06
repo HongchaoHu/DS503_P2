@@ -1,4 +1,4 @@
-package edu.cs585.project2.model;
+package edu.ds503.project2.model;
 
 public class Point2D {
     private final int x;

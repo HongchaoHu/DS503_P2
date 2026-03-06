@@ -1,0 +1,5 @@
+mapreduce/target/
+.venv/
+
+# Optional local test outputs
+data/q1test/actual_*.tsv
