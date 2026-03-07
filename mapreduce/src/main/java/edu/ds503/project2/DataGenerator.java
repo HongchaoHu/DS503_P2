@@ -10,16 +10,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
-/**
- * DataGenerator for DS503 Project 2 - Step 1
- * Creates datasets P (points) and R (rectangles) according to specifications:
- * - Space: [1, 10000] x [1, 10000]
- * - P: random 2D points (x,y)
- * - R: rectangles <bottomLeft_x, bottomLeft_y, height, width>
- *   - height: uniform [1, 20]
- *   - width: uniform [1, 7]
- * - Each dataset: at least 100MB
- */
 public class DataGenerator {
     private static final int MIN_COORD = 1;
     private static final int MAX_COORD = 10_000;
