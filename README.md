@@ -114,6 +114,66 @@ docker exec -it namenode hadoop jar /opt/mapreduce/target/ds503-project2-1.0.0.j
 
 - Fully working grid-based partition + window filtering.
 
+### Problem 1 Validation Report (Submission Ready)
+
+This section summarizes the executed tests against the Project 2 PDF requirements for Q1.
+
+#### Environment Notes
+
+- Hadoop services started via `docker compose up -d`.
+- Built jar: `mapreduce/target/ds503-project2-1.0.0.jar`.
+- In this machine/container setup, jar was executed from `/tmp/ds503-project2-1.0.0.jar` inside `namenode`.
+
+#### Q1 Requirement Checklist
+
+| Requirement (from PDF) | Test Evidence | Result |
+| --- | --- | --- |
+| Single MapReduce job with distributed execution | `SpatialJoinJob` runs one job and sets `job.setNumReduceTasks(4)`; outputs include `part-r-00000`..`part-r-00003` | PASS |
+| Optional window `W(x1,y1,x2,y2)` filtering works | Run with `1,3,3,20` on small dataset produced 3 expected join pairs (IDs differ due to generated IDs) | PASS |
+| Boundary inclusion (point on edge/corner is inside rectangle) | Boundary dataset test returned `(1,1)`, `(1,3)`, `(3,1)`, `(3,3)`, `(2,2)` for rectangle `1,1,2,2` | PASS |
+| Invalid argument handling | Missing args / malformed window / invalid bounds each return usage+error and exit code `1` | PASS |
+| Robustness to malformed lines | Mixed invalid records are skipped; valid records still joined correctly | PASS |
+| 100MB-scale run viability | Generated 100MB `P` and 100MB `R`, uploaded to HDFS, completed unwindowed and windowed runs | PASS |
+
+#### Key Commands Used for Validation
+
+```bash
+# Build
+cd mapreduce
+mvn -q clean package -DskipTests
+
+# Small dataset run (no window)
+docker exec namenode hadoop jar /tmp/ds503-project2-1.0.0.jar \
+  edu.ds503.project2.SpatialJoinJob \
+  /project2/input/q1test/P_small.txt /project2/input/q1test/R_small.txt /project2/output/q1test
+
+# Small dataset run (windowed)
+docker exec namenode hadoop jar /tmp/ds503-project2-1.0.0.jar \
+  edu.ds503.project2.SpatialJoinJob \
+  /project2/input/q1test/P_small.txt /project2/input/q1test/R_small.txt /project2/output/q1test_window 1,3,3,20
+
+# 100MB-scale runs
+docker exec namenode hadoop jar /tmp/ds503-project2-1.0.0.jar \
+  edu.ds503.project2.SpatialJoinJob \
+  /project2/input/P_100mb.txt /project2/input/R_100mb.txt /project2/output/q1_100mb
+
+docker exec namenode hadoop jar /tmp/ds503-project2-1.0.0.jar \
+  edu.ds503.project2.SpatialJoinJob \
+  /project2/input/P_100mb.txt /project2/input/R_100mb.txt /project2/output/q1_100mb_window 1,3,3,20
+```
+
+#### Observed Runtime/Output Stats (100MB Inputs)
+
+| Run | Runtime | Reduce Output Records | Output Size (raw) |
+| --- | ---: | ---: | ---: |
+| Unwindowed | 275 s | 45,114,564 | 979,938,487 bytes |
+| Windowed `1,3,3,20` | 12 s | 8 | 135 bytes |
+
+#### Notes for Readme.pdf
+
+- Rectangle IDs in outputs (`r...`) are generated from mapper input offsets, so they may differ from the PDF example IDs but preserve correct join semantics.
+- For Q1 status table in `Readme.pdf`, mark **Fully Working** with comments based on the checklist above.
+
 ## Problem 2 — Distance-Based Outlier Detection
 
 ### Problem 2 Goal
