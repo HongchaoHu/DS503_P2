@@ -191,6 +191,7 @@ A point is an outlier if fewer than `k` neighbors exist within radius `r`.
 
 - Use one MapReduce job.
 - Must support distributed execution.
+- Apply segmented spatial processing (hint from PDF) so each point is decided using its segment and adjacent segments.
 
 ### Problem 2 Run
 
@@ -202,7 +203,12 @@ docker exec -it namenode hadoop jar /opt/mapreduce/target/ds503-project2-1.0.0.j
 
 ### Problem 2 Status
 
-- Job skeleton exists; core outlier logic still TODO.
+- Implemented and tested.
+- Mandatory parameter handling (`r`, `k`) is enforced with error exit on invalid input.
+- Single-job segmented algorithm is used (mapper emits to neighboring cells; reducer decides outliers for home-cell points only).
+- Validation summary:
+  - Small deterministic dataset (`r=2`, `k=2`) reports expected outlier `50,50`.
+  - 100MB run (`r=20`, `k=5`) completed successfully in one job (`Q2_100MB_SECONDS=277`).
 
 ## Problem 3 — K-Means Clustering
 
@@ -222,6 +228,7 @@ Cluster points into `K` groups using iterative center updates.
 - Iterative jobs, max 6 iterations.
 - Stop when centers do not change.
 - Use combiner optimization and reducer-driven center updates.
+- Use single reducer for center coordination and emit convergence indicator.
 
 ### Problem 3 Run
 
@@ -233,7 +240,11 @@ docker exec -it namenode hadoop jar /opt/mapreduce/target/ds503-project2-1.0.0.j
 
 ### Problem 3 Status
 
-- Driver/iteration skeleton exists; mapper/reducer clustering logic still TODO.
+- Implemented iterative K-Means driver and MapReduce pipeline.
+- Uses combiner and a single reducer per iteration.
+- Reducer output includes convergence metadata (`__meta__\tchanged=true/false`).
+- Small deterministic validation completed: converged in 2 iterations with stable centers.
+- 100MB validation completed (`K=10`): job finished in 77s and executed 6 iterations (`iter-0`..`iter-5`), stopping at max-iteration cap when centers were still changing.
 
 ## Useful Commands
 
