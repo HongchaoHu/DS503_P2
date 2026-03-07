@@ -1,226 +1,195 @@
 # DS503 Project 2 — Advanced Hadoop MapReduce Operations
 
-This project implements three advanced MapReduce operations in Hadoop using Java:
+This repository contains three Hadoop MapReduce tasks for DS503:
 
-1. **[Problem 1: Spatial Join](problem1/README.md)** (35 points) — Join points and rectangles in 2D space
-2. **[Problem 2: Distance-Based Outlier Detection](problem2/README.md)** (35 points) — Find outliers using radius-based neighbors
-3. **[Problem 3: K-Means Clustering](problem3/README.md)** (30 points) — Iterative clustering with convergence
-
-📖 **See individual problem READMEs in each folder for detailed requirements and implementation guides.**
-
----
+1. Problem 1 (35 pts): Spatial Join between points and rectangles
+2. Problem 2 (35 pts): Distance-based outlier detection
+3. Problem 3 (30 pts): K-Means clustering with iterative MapReduce
 
 ## Project Structure
 
-```
+```text
 DS503_P2/
-├── problem1/                   # Problem 1: Spatial Join
-│   ├── README.md                   - Detailed specifications
-│   ├── DataGenerator.java          - Generate datasets P and R
-│   └── SpatialJoinJob.java         - MapReduce spatial join implementation
-├── problem2/                   # Problem 2: Outlier Detection
-│   ├── README.md                   - Detailed specifications
-│   └── OutlierJob.java             - MapReduce outlier detection
-├── problem3/                   # Problem 3: K-Means Clustering
-│   ├── README.md                   - Detailed specifications
-│   └── KMeansDriver.java           - Iterative K-Means implementation
-├── shared/                     # Shared utility classes
-│   ├── Point2D.java                - 2D point model
-│   └── Rectangle2D.java            - Rectangle model with spatial operations
 ├── mapreduce/
-│   ├── pom.xml                     - Maven build configuration
-│   └── target/                     - Compiled JAR output
-├── docker-compose.yml          # Hadoop cluster configuration
-├── hadoop.env                  # Hadoop environment variables
-└── data/                       # Local test datasets
+│   ├── pom.xml
+│   ├── src/main/java/edu/ds503/project2/
+│   │   ├── DataGenerator.java
+│   │   ├── SpatialJoinJob.java
+│   │   ├── OutlierJob.java
+│   │   ├── KMeansDriver.java
+│   │   └── model/
+│   │       ├── Point2D.java
+│   │       └── Rectangle2D.java
+│   └── target/
+├── data/
+│   └── q1test/
+├── docker-compose.yml
+├── hadoop.env
+└── project 2.pdf
 ```
 
----
+## Global Constraints
+
+- Coordinate space is `(1,1)` to `(10000,10000)`.
+- Coordinates are integers.
+- Datasets should be at least 100MB for final runs.
+- Penalties in project spec still apply:
+  - Extra MapReduce jobs where only one is required.
+  - Non-distributed assumptions (single mapper/reducer where disallowed).
 
 ## Quick Start
 
-### 1. Start Hadoop Cluster
+### 1) Start Hadoop cluster
 
 ```bash
 docker compose up -d
-```
-
-**Verify all services are healthy:**
-```bash
 docker ps
 ```
-All 5 containers should show `(healthy)` status.
 
-### 2. Build Java Project
+### 2) Build JAR
 
 ```bash
-docker run --rm -v "${PWD}/mapreduce:/app" -w /app maven:3.9.9-eclipse-temurin-8 mvn clean package
+cd mapreduce
+mvn clean package
 ```
 
-**Output:** `mapreduce/target/ds503-project2-1.0.0.jar`
+Expected output JAR:
 
-### 3. Generate Datasets
+`mapreduce/target/ds503-project2-1.0.0.jar`
 
-**Generate 100MB datasets P and R:**
+### 3) Generate datasets
+
 ```bash
-docker run --rm -v "${PWD}/mapreduce:/app" -v "${PWD}/data:/data" -w /app maven:3.9.9-eclipse-temurin-8 \
-  java -cp target/ds503-project2-1.0.0.jar edu.ds503.project2.DataGenerator \
-  --points-out /data/P.txt --rects-out /data/R.txt --target-mb 100
+cd mapreduce
+java -cp target/ds503-project2-1.0.0.jar edu.ds503.project2.DataGenerator \
+  --points-out ../data/P.txt --rects-out ../data/R.txt --target-mb 100
 ```
 
-### 4. Upload to HDFS
+### 4) Upload to HDFS
 
 ```bash
-# Create HDFS directories
 docker exec -it namenode hdfs dfs -mkdir -p /project2/input
-
-# Copy datasets to container
 docker cp data/P.txt namenode:/tmp/P.txt
 docker cp data/R.txt namenode:/tmp/R.txt
-
-# Upload to HDFS
 docker exec -it namenode hdfs dfs -put -f /tmp/P.txt /project2/input/P.txt
 docker exec -it namenode hdfs dfs -put -f /tmp/R.txt /project2/input/R.txt
-
-# Verify upload
-docker exec -it namenode hdfs dfs -ls /project2/input/
 ```
 
-### 5. Run MapReduce Jobs
+## Problem 1 — Spatial Join
 
-**Problem 1: Spatial Join (No Window)**
+### Problem 1 Goal
+
+Output pairs `<rectangle, point>` where point is inside or on rectangle boundary.
+
+### Problem 1 Inputs
+
+- Points path `P`
+- Rectangles path `R`
+- Output path
+- Optional window `W(x1,y1,x2,y2)`
+
+### Problem 1 Requirements
+
+- Use one MapReduce job with dual input (points + rectangles).
+- If window is provided, filter out points/rectangles outside it.
+
+### Problem 1 Run
+
 ```bash
 docker exec -it namenode hadoop jar /opt/mapreduce/target/ds503-project2-1.0.0.jar \
   edu.ds503.project2.SpatialJoinJob \
   /project2/input/P.txt /project2/input/R.txt /project2/output/q1
 ```
 
-**Problem 1: Spatial Join (With Window)**
+Windowed version:
+
 ```bash
 docker exec -it namenode hadoop jar /opt/mapreduce/target/ds503-project2-1.0.0.jar \
   edu.ds503.project2.SpatialJoinJob \
   /project2/input/P.txt /project2/input/R.txt /project2/output/q1_windowed \
-  1 3 3 20
+  1,3,3,20
 ```
 
-**Problem 2: Outlier Detection**
+### Problem 1 Status
+
+- Fully working grid-based partition + window filtering.
+
+## Problem 2 — Distance-Based Outlier Detection
+
+### Problem 2 Goal
+
+A point is an outlier if fewer than `k` neighbors exist within radius `r`.
+
+### Problem 2 Inputs
+
+- Points path
+- Output path
+- Radius `r`
+- Threshold `k`
+
+### Problem 2 Requirements
+
+- Use one MapReduce job.
+- Must support distributed execution.
+
+### Problem 2 Run
+
 ```bash
 docker exec -it namenode hadoop jar /opt/mapreduce/target/ds503-project2-1.0.0.jar \
   edu.ds503.project2.OutlierJob \
-  /project2/input/P.txt /project2/output/q2 \
-  20 5
+  /project2/input/P.txt /project2/output/q2 20 5
 ```
 
-**Problem 3: K-Means Clustering**
+### Problem 2 Status
+
+- Job skeleton exists; core outlier logic still TODO.
+
+## Problem 3 — K-Means Clustering
+
+### Problem 3 Goal
+
+Cluster points into `K` groups using iterative center updates.
+
+### Problem 3 Inputs
+
+- Points path
+- Seeds path
+- Output base path
+- `K`
+
+### Problem 3 Requirements
+
+- Iterative jobs, max 6 iterations.
+- Stop when centers do not change.
+- Use combiner optimization and reducer-driven center updates.
+
+### Problem 3 Run
+
 ```bash
-# Generate K seed points first
-# Then run clustering
 docker exec -it namenode hadoop jar /opt/mapreduce/target/ds503-project2-1.0.0.jar \
   edu.ds503.project2.KMeansDriver \
-  /project2/input/P.txt /project2/input/seeds.txt /project2/output/q3 \
-  10
+  /project2/input/P.txt /project2/input/seeds.txt /project2/output/q3 10
 ```
 
----
+### Problem 3 Status
 
-## Implementation Status
-
-| Problem | Status | Implementation |
-|---------|--------|----------------|
-| Problem 1: Spatial Join | ✅ Fully Working | Grid-based partitioning with window filtering |
-| Problem 2: Outlier Detection | 🚧 To Be Implemented | Single MapReduce job with spatial segmentation |
-| Problem 3: K-Means Clustering | 🚧 To Be Implemented | Iterative driver with combiner optimization |
-
----
-
-## Key Constraints
-
-**All Problems:**
-- Coordinate space: **(1,1) to (10,000, 10,000)**
-- All coordinates are **integers**
-- Datasets must be **at least 100 MB** each
-
-**MapReduce Requirements:**
-- Problem 1: **One MapReduce job** with dual input (P and R)
-- Problem 2: **One MapReduce job** (multiple mappers/reducers allowed)
-- Problem 3: **Iterative MapReduce** jobs (max 6 iterations)
-
-**Penalties:**
-- Extra MapReduce job: **−10 points per job**
-- Single mapper/reducer (no distribution): **−15 points**
-
----
-
-## Docker Services
-
-The Hadoop cluster consists of 5 containerized services:
-
-- **namenode**: HDFS NameNode (metadata management)
-- **datanode**: HDFS DataNode (data storage)
-- **resourcemanager**: YARN ResourceManager (job scheduling)
-- **nodemanager**: YARN NodeManager (task execution)
-- **historyserver**: MapReduce Job History Server (job logs)
-
-**Access Web UIs:**
-- NameNode: http://localhost:9870
-- ResourceManager: http://localhost:8088
-- JobHistory: http://localhost:19888
-
----
+- Driver/iteration skeleton exists; mapper/reducer clustering logic still TODO.
 
 ## Useful Commands
 
-**View HDFS files:**
 ```bash
 docker exec -it namenode hdfs dfs -ls -R /project2/
-docker exec -it namenode hdfs dfs -cat /project2/output/q1/part-r-00000 | head -20
-```
-
-**Clean output directories:**
-```bash
 docker exec -it namenode hdfs dfs -rm -r /project2/output/q1
 docker exec -it namenode hdfs dfs -rm -r /project2/output/q2
 docker exec -it namenode hdfs dfs -rm -r /project2/output/q3
 ```
 
-**Rebuild and redeploy JAR:**
-```bash
-docker run --rm -v "${PWD}/mapreduce:/app" -w /app maven:3.9.9-eclipse-temurin-8 mvn clean package
-docker cp mapreduce/target/ds503-project2-1.0.0.jar namenode:/opt/mapreduce/target/
-```
+## Submission Notes
 
-**View MapReduce job logs:**
-```bash
-docker exec -it namenode hadoop job -history all
-```
-
----
-
-## Submission Requirements
-
-**Submit one ZIP file containing:**
-- Java source code (data generation + MapReduce jobs)
-- `Readme.pdf` with:
-  - Any assumptions made
-  - Status table:
-
-| Question | Status | Comment |
-|----------|--------|---------|
-| Q1 | Fully Working / Partially Working / Not Working | |
-| Q2 | Fully Working / Partially Working / Not Working | |
-| Q3 | Fully Working / Partially Working / Not Working | |
-
-  - Additional implementation comments
-
-**Do NOT include:**
-- Compiled `.class` files
-- `mapreduce/target/` directory
-- Generated datasets (P.txt, R.txt)
-
----
+Submit source code + `Readme.pdf` status report. Do not include generated data or build artifacts.
 
 ## References
 
-- [K-Means Clustering Algorithm](http://en.wikipedia.org/wiki/K-means_clustering#Standard_algorithm)
-- Course: DS503 - Big Data Management
-- Project specification: `project 2.pdf`
+- K-Means: [Wikipedia Standard Algorithm](http://en.wikipedia.org/wiki/K-means_clustering#Standard_algorithm)
+- Course: DS503 Big Data Management
+- Spec file: `project 2.pdf`
