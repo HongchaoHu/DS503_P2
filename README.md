@@ -255,6 +255,59 @@ docker exec -it namenode hdfs dfs -rm -r /project2/output/q2
 docker exec -it namenode hdfs dfs -rm -r /project2/output/q3
 ```
 
+## Final Regression Report
+
+This section captures the most recent full end-to-end validation run across build, data generation, and all three problems.
+
+### Scope
+
+- Source build/compile validation
+- Data generation and schema/bounds checks
+- Problem 1 small + 100MB runs
+- Problem 2 argument validation + small + 100MB runs
+- Problem 3 small + 100MB iterative runs
+
+### Build and Diagnostics
+
+| Check | Result |
+| --- | --- |
+| `mvn -q clean package -DskipTests` | PASS |
+| VS Code diagnostics (`get_errors`) | PASS |
+
+### Data Validation
+
+| Dataset | Validation | Result |
+| --- | --- | --- |
+| `P_final_100mb.txt` | Sampled format and bounds (`x,y`, each in `[1,10000]`) | PASS |
+| `R_final_100mb.txt` | Sampled format/ranges (`x,y,h,w`; `h∈[1,20]`, `w∈[1,7]`, rectangle in bounds) | PASS |
+| `seeds_final_k10.txt` | Seed file created with 10 points | PASS |
+
+### Problem Test Matrix
+
+| Problem | Test | Observed Result | Verdict |
+| --- | --- | --- | --- |
+| Q1 Spatial Join | Small no-window | 8 output pairs | PASS |
+| Q1 Spatial Join | Small window `1,3,3,20` | 3 output pairs | PASS |
+| Q1 Spatial Join | 100MB no-window | Completed in 278s, output produced | PASS |
+| Q1 Spatial Join | 100MB window | Completed in 12s, tiny filtered output | PASS |
+| Q2 Outlier | Missing args | Usage error + exit code 1 | PASS |
+| Q2 Outlier | Small deterministic (`r=2,k=2`) | Outlier output includes `50,50` | PASS |
+| Q2 Outlier | 100MB (`r=20,k=5`) | Completed in 258s, output count 0 | PASS |
+| Q3 K-Means | Small deterministic (`K=2`) | `iter-0: changed=true`, `iter-1: changed=false` | PASS |
+| Q3 K-Means | 100MB (`K=10`) | Completed in 78s; `iter-0..iter-5`; stop at max 6 iterations | PASS |
+
+### Overall Status
+
+- Q1: Fully Working
+- Q2: Fully Working
+- Q3: Fully Working (max-iteration termination path validated)
+
+### Post-Run Cleanup State
+
+- Local generated data/build artifacts were removed.
+- HDFS test outputs were removed.
+- Baseline test input folder `data/q1test` retained.
+
 ## Submission Notes
 
 Submit source code + `Readme.pdf` status report. Do not include generated data or build artifacts.
